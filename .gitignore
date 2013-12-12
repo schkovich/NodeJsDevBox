@@ -1,0 +1,7 @@
+.idea/
+.vagrant/
+.tmp/
+.librarian/
+modules/
+atlassian-ide-plugin.xml
+devup.log
