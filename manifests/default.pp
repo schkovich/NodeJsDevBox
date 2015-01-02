@@ -1,3 +1,3 @@
-node 'dev.hatch.js' {
+node 'dev.node.js' {
   include nodejs_dev
 }

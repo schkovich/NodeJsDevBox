@@ -7,7 +7,7 @@ Vagrant.configure("2") do |config|
   # please see the online documentation at vagrantup.com.
 
   # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = "raring"
+  config.vm.box = "trusty64"
 
   # The url from where the 'config.vm.box' box will be fetched if it
   # doesn't already exist on the user's system.
@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
-  config.vm.network :private_network, ip: "192.168.10.2"
+  # config.vm.network :private_network, ip: "192.168.10.2"
 #   config.vm.network :hostonly, ip: "192.168.10.2"
 #   config.vm.network "public_network", :bridge => 'en1: Wi-Fi (AirPort)'
   # Create a public network, which generally matched to bridged network.
@@ -34,13 +34,13 @@ Vagrant.configure("2") do |config|
   # argument is a set of non-required options.
   # NFS shares (Ubuntu) are not working well on encrypted file systems
   # https://help.ubuntu.com/community/SettingUpNFSHowTo#Mounting_NFS_shares_in_encrypted_home_won.27t_work_on_boot
-  config.vm.synced_folder "~/Projects/HatchJs/", "/project", :nfs => true
+  # config.vm.synced_folder "~/Projects/HatchJs/", "/project", :nfs => true
 
   # View the documentation for the provider you're using for more
   # information on available options.
 
   # setup FQDN
-  config.vm.hostname = "#{ENV['PUPPET_HOST']}.hatch.js"
+  config.vm.hostname = "#{ENV['PUPPET_HOST']}.node.js"
 
   # config.ssh.username = "ubuntu"
   # Provider-specific configuration so you can fine-tune various
@@ -57,6 +57,12 @@ Vagrant.configure("2") do |config|
     # Expired DHCP lease can cause no Internet connectivity from guest
     vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
     vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+  end
+
+  # kvm provider
+  config.vm.provider "kvm" do |v|
+    v.memory_size = 2097152
+    v.core_number = 2
   end
 
   # aws provider
@@ -89,7 +95,7 @@ Vagrant.configure("2") do |config|
 
   # Configure language
   config.vm.provision :shell do |s|
-    s.path = "langconfig.sh"
+    s.path = "lib/bash/puppet-install.sh"
   end
 
   # Enable provisioning with Puppet stand alone.  Puppet manifests
