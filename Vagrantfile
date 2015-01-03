@@ -95,19 +95,24 @@ Vagrant.configure("2") do |config|
 
   # Configure language
   config.vm.provision :shell do |s|
+    s.args = "#{ENV['PUPPET_WDIR']}"
     s.path = "lib/bash/puppet-install.sh"
   end
 
   # Enable provisioning with Puppet stand alone.  Puppet manifests
   # are contained in a directory path relative to this Vagrantfile.
   config.vm.provision :puppet do |puppet|
-    puppet.manifests_path = "manifests"
-    puppet.manifest_file  = "default.pp"
-    puppet.module_path = ['modules']
+    puppet.manifests_path = ["vm", "#{ENV['PUPPET_WDIR']}"]
+    puppet.manifest_file  = "./manifests/default.pp"
+    puppet.facter = {
+      "puppet_wdir" => "#{ENV['PUPPET_WDIR']}"
+    }
+    puppet.temp_dir = "#{ENV['PUPPET_WDIR']}"
+#    puppet.module_path = ['modules']
     puppet.options = [
 #       "--hiera_config=/etc/puppet/hiera.yaml",
        "--verbose --debug", "--environment=#{ENV['PUPPET_ENV']}",
-#        "--fileserverconfig=/vagrant/fileserver.conf"
+       "--modulepath #{ENV['PUPPET_WDIR']}/modules",
        ]
   end
 
