@@ -10,6 +10,7 @@ exclude-list
 justreload.sh
 justup.sh
 LICENCE
+LICENSE
 provisionpuppet.sh
 provisionshell.sh
 Puppetfile
