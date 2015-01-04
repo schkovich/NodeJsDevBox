@@ -9,11 +9,11 @@ PUPPET_WDIR="${1:-/home/vagrant/opt/puppet}"
 source "/vagrant/lib/bash/helpers.sh"
 
 # See http://serverfault.com/questions/500764/dpkg-reconfigure-unable-to-re-open-stdin-no-file-or-directory
-#locale-gen en_US.UTF-8
+locale-gen en_GB en_GB.UTF-8
 #export LANGUAGE=en_US.UTF-8
 #export LANG=en_US.UTF-8
 #export LC_ALL=en_US.UTF-8
-#dpkg-reconfigure locales
+dpkg-reconfigure locales
 
 function installPuppetDeb {
   installWget
@@ -33,11 +33,12 @@ function purgePuppetDeb {
 }
 
 function installPuppet {
-  local pin="${1-:3.7.3}"
+  local pin="${1:-3.7.3}"
   local package="puppet"
-  dpkg --compare-versions $(puppet --version) ge ${pin}
-  ver=$?
-  if [[ "0" -ne "${ver}" ]]; then
+  local test=0
+
+  dpkg --compare-versions $(puppet --version) ge ${pin} || test=$?
+  if [[ "0" -ne "${test}" ]]; then
     purgePackage ${package}
     purgePuppetDeb
     installPuppetDeb
@@ -56,15 +57,14 @@ function installRuby {
 }
 
 function idempotentInstallRuby {
-  local pin="${1-:2.1.0}"
+  local pin="${1:-2.1.0}"
   local test=0
   isPackageInstalled "ruby2.1" || test=$?
   if [ "0" -ne  "${test}" ]; then
     installRuby
   else
-    dpkg --compare-versions $(ruby -e 'puts "#{RUBY_VERSION}"') ge ${pin}
-    ver=$?
-    if [[ "0" -ne "${ver}" ]]; then
+    dpkg --compare-versions $(ruby -e 'puts "#{RUBY_VERSION}"') ge ${pin} || test=$?
+    if [[ "0" -ne "${test}" ]]; then
       installRuby
     else
       echo "Ruby already at or greater than version ${pin}"
