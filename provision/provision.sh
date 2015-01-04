@@ -137,9 +137,21 @@ echo postfix postfix/mailname string vvv | debconf-set-selections
 # Disable ipv6 as some ISPs/mail servers have problems with it
 echo "inet_protocols = ipv4" >> /etc/postfix/main.cf
 
+# Read the file in parameter and
+function addSources() {
+    local line=""
+    local file=${1}
+    while read line # Read a line
+    do
+    	if [[ ${line:0:1} != '#' ]]; then # Ignore comments
+        	add-apt-repository --yes --enable-source "${line}"
+		fi
+    done < ${file}
+}
+
 # Provide our custom apt sources before running `apt-get update`
-ln -sf /srv/config/apt-source-append.list /etc/apt/sources.list.d/vvv-sources.list
-echo "Linked custom apt sources"
+addSources "/srv/config/apt-source-append.list"
+echo "Added custom apt sources"
 
 if [[ $ping_result == "Connected" ]]; then
 	# If there are any packages to be installed in the apt_package_list array,
