@@ -40,6 +40,9 @@ Vagrant.configure("2") do |config|
   # information on available options.
 
   # setup FQDN
+  # will add to /etc/hosts 127.0.1.1 dev.node.js dev case when $PUPPET_HOST is dev
+  # for details see http://linux.die.net/man/1/hostname
+  # https://docs.puppetlabs.com/facter/1.6/core_facts.html#domain
   config.vm.hostname = "#{ENV['PUPPET_HOST']}.#{ENV['PUPPET_DOMAIN']}"
 
   # config.ssh.username = "ubuntu"
