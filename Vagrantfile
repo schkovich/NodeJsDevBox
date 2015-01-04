@@ -108,7 +108,8 @@ Vagrant.configure("2") do |config|
     puppet.manifests_path = ["vm", "#{ENV['PUPPET_WDIR']}"]
     puppet.manifest_file  = "./manifests/default.pp"
     puppet.facter = {
-      "puppet_wdir" => "#{ENV['PUPPET_WDIR']}"
+      "puppet_wdir" => "#{ENV['PUPPET_WDIR']}",
+      "puppet_home" => "#{ENV['PUPPET_HOME']}"
     }
     puppet.temp_dir = "#{ENV['PUPPET_WDIR']}"
 #    puppet.module_path = ['modules']

@@ -18,37 +18,37 @@ node default {
     user    => "vagrant"
   }
   ->
-  nodejs::npm { "${puppet_wdir}/../vatrates:mongodb":
+  nodejs::npm { "${puppet_home}/.node_modules:mongodb":
     ensure  => present,
     version => "~1.4.26",
   }
   ->
-  nodejs::npm { "${puppet_wdir}/../vatrates:monk":
+  nodejs::npm { "${puppet_home}/.node_modules:monk":
     ensure  => present,
     version => "~0.9.1",
   }
   ->
-  nodejs::npm { "${puppet_wdir}/../vatrates:body-parser":
+  nodejs::npm { "${puppet_home}/.node_modules:body-parser":
     ensure  => present,
     version => "~1.8.1",
   }
   ->
-  nodejs::npm { "${puppet_wdir}/../vatrates:cookie-parser":
+  nodejs::npm { "${puppet_home}/.node_modules:cookie-parser":
     ensure  => present,
     version => "~1.3.3",
   }
   ->
-  nodejs::npm { "${puppet_wdir}/../vatrates:morgan":
+  nodejs::npm { "${puppet_home}/.node_modules:morgan":
     ensure  => present,
     version => "~1.3.0",
   }
   ->
-  nodejs::npm { "${puppet_wdir}/../vatrates:serve-favicon":
+  nodejs::npm { "${puppet_home}/.node_modules:serve-favicon":
     ensure  => present,
     version => "~2.1.3",
   }
   ->
-  nodejs::npm { "${puppet_wdir}/../vatrates:debug":
+  nodejs::npm { "${puppet_home}/.node_modules:debug":
     ensure  => present,
     version => "~2.0.0",
   }
