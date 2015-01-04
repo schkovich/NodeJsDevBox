@@ -18,6 +18,7 @@ Vagrant.configure("2") do |config|
   # VB box must be converted manually to KVM box
   # see https://github.com/sciurus/vagrant-mutate/issues/52#issuecomment-67784465
   config.vm.box = "trusty64"
+
   # Default Ubuntu Box
   #
   # This box is provided by Ubuntu vagrantcloud.com and is a nicely sized (332MB)
@@ -137,7 +138,8 @@ Vagrant.configure("2") do |config|
   # setup FQDN
   # will add to /etc/hosts 127.0.1.1 dev.node.js dev case when $PUPPET_HOST is dev
   # for details see http://linux.die.net/man/1/hostname
-  config.vm.hostname = "#{ENV['PUPPET_HOST']}.node.js"
+  # https://docs.puppetlabs.com/facter/1.6/core_facts.html#domain
+  config.vm.hostname = "#{ENV['PUPPET_HOST']}.#{ENV['PUPPET_DOMAIN']}"
 
   # Local Machine Hosts
   #
