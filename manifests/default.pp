@@ -17,6 +17,13 @@ node default {
     cwd     => "${puppet_wdir}/../",
     user    => "vagrant"
   }
+  file {
+    "${puppet_home}/.node_modules":
+      ensure => directory,
+      group  => 'vagrant',
+      owner  => 'vagrant',
+      mode   => 0755,
+  }
   ->
   nodejs::npm { "${puppet_home}/.node_modules:mongodb":
     ensure  => present,
