@@ -2,7 +2,7 @@ Exec {
   path => ['/usr/sbin', '/usr/bin', '/sbin', '/bin', '/usr/local/bin']
 }
 
-node "${$fqdn}" {
+node default {
 
   stage { 'preinstall':
     before => Stage['main']
