@@ -42,7 +42,7 @@ function installPuppet {
 }
 
 function installRuby {
-  apt-add-repository ppa:brightbox/ruby-ng
+  apt-add-repository --yes ppa:brightbox/ruby-ng
   apt-get update >/dev/null
   installPackage "ruby2.1"
   installPackage "ruby2.1-dev"
