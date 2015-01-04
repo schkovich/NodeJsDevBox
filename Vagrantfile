@@ -40,7 +40,7 @@ Vagrant.configure("2") do |config|
   # information on available options.
 
   # setup FQDN
-  config.vm.hostname = "#{ENV['PUPPET_HOST']}.node.js"
+  config.vm.hostname = "#{ENV['PUPPET_HOST']}.#{ENV['PUPPET_DOMAIN']}"
 
   # config.ssh.username = "ubuntu"
   # Provider-specific configuration so you can fine-tune various

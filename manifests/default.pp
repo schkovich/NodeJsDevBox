@@ -2,7 +2,7 @@ Exec {
   path => ['/usr/sbin', '/usr/bin', '/sbin', '/bin', '/usr/local/bin']
 }
 
-node "dev.node.js" {
+node "${$fqdn}" {
 
   stage { 'preinstall':
     before => Stage['main']
