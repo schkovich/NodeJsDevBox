@@ -12,57 +12,50 @@ node default {
     stage => "preinstall"
   }
 
+  package { 'jade':
+    ensure   => '>= 1.6.0',
+    provider => 'npm',
+  }
+  ->
   exec {"express vatrates":
     creates => "${puppet_wdir}/../vatrates",
     cwd     => "${puppet_wdir}/../",
     user    => "vagrant"
   }
-  file {
-    "${puppet_home}/.node_modules":
-      ensure => directory,
-      group  => 'vagrant',
-      owner  => 'vagrant',
-      mode   => 0755,
-  }
   ->
-  nodejs::npm { "${puppet_home}/.node_modules:mongodb":
+  nodejs::npm { "${puppet_wdir}/../vatrates:mongodb":
     ensure  => present,
     version => "~1.4.26",
   }
   ->
-  nodejs::npm { "${puppet_home}/.node_modules:monk":
+  nodejs::npm { "${puppet_wdir}/../vatrates:monk":
     ensure  => present,
     version => "~0.9.1",
   }
   ->
-  nodejs::npm { "${puppet_home}/.node_modules:body-parser":
+  nodejs::npm { "${puppet_wdir}/../vatrates:body-parser":
     ensure  => present,
     version => "~1.8.1",
   }
   ->
-  nodejs::npm { "${puppet_home}/.node_modules:cookie-parser":
+  nodejs::npm { "${puppet_wdir}/../vatrates:cookie-parser":
     ensure  => present,
     version => "~1.3.3",
   }
   ->
-  nodejs::npm { "${puppet_home}/.node_modules:morgan":
+  nodejs::npm { "${puppet_wdir}/../vatrates:morgan":
     ensure  => present,
     version => "~1.3.0",
   }
   ->
-  nodejs::npm { "${puppet_home}/.node_modules:serve-favicon":
+  nodejs::npm { "${puppet_wdir}/../vatrates:serve-favicon":
     ensure  => present,
     version => "~2.1.3",
   }
   ->
-  nodejs::npm { "${puppet_home}/.node_modules:debug":
+  nodejs::npm { "${puppet_wdir}/../vatrates:debug":
     ensure  => present,
     version => "~2.0.0",
-  }
-  ->
-  nodejs::npm { "${puppet_wdir}/../vatrates:jade":
-    ensure  => present,
-    version => "~1.6.0",
   }
   ->
   file {
