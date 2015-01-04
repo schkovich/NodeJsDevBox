@@ -64,7 +64,8 @@ Vagrant.configure("2") do |config|
   # NFS shares (Ubuntu) are not working well on encrypted file systems
   # https://help.ubuntu.com/community/SettingUpNFSHowTo#Mounting_NFS_shares_in_encrypted_home_won.27t_work_on_boot
   # config.vm.synced_folder "~/Projects/HatchJs/", "/project", :nfs => true
- # Drive mapping
+
+  # Drive mapping
   #
   # The following config.vm.synced_folder settings will map directories in your Vagrant
   # virtual machine to directories on your local machine. Once these are mapped, any
@@ -79,7 +80,7 @@ Vagrant.configure("2") do |config|
   # a mapped directory inside the VM will be created that contains these files.
   # This directory is used to maintain default database scripts as well as backed
   # up mysql dumps (SQL files) that are to be imported automatically on vagrant up
-  config.vm.synced_folder "database/", "/srv/database"
+  config.vm.synced_folder "database/", "/srv/database", :create => "true"
 
   # If the mysql_upgrade_info file from a previous persistent database mapping is detected,
   # we'll continue to map that directory as /var/lib/mysql inside the virtual machine. Once
@@ -89,7 +90,7 @@ Vagrant.configure("2") do |config|
   # plugin is installed.
   if File.exists?(File.join(vagrant_dir,'database/data/mysql_upgrade_info')) then
     if vagrant_version >= "1.3.0"
-      config.vm.synced_folder "database/data/", "/var/lib/mysql", :mount_options => [ "dmode=777", "fmode=777" ]
+      config.vm.synced_folder "database/data/", "/var/lib/mysql", :create => "true"
     else
       config.vm.synced_folder "database/data/", "/var/lib/mysql", :extra => 'dmode=777,fmode=777'
     end
@@ -115,7 +116,7 @@ Vagrant.configure("2") do |config|
   # inside the VM will be created that acts as the default location for nginx sites. Put all
   # of your project files here that you want to access through the web server
   if vagrant_version >= "1.3.0"
-    config.vm.synced_folder "www/", "/srv/www/", :owner => "www-data", :mount_options => [ "dmode=775", "fmode=774" ], :create => "true"
+    config.vm.synced_folder "www/", "/srv/www/", :owner => "www-data", :create => "true"
   else
     config.vm.synced_folder "www/", "/srv/www/", :owner => "www-data", :extra => 'dmode=775,fmode=774'
   end
