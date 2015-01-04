@@ -48,7 +48,7 @@ function purgePackage {
   isPackageInstalled ${package} || exitcode=$?
   # if package is installed and there was no error
   if [ "0" -eq  "${exitcode}" ]; then
-    echo "Purging old ${package} installation at ${JUJU_REMOTE_UNIT:-unset}"
+    echo "Purging old ${package} installation"
     apt-get purge "${package}" --yes
     apt-get autoremove --yes
   # if return code is not 33 exit with that code
@@ -63,7 +63,7 @@ function installWget {
   local test=0
   isPackageInstalled ${package} || test=$?
   if [ "0" -ne  "${test}" ]; then
-    echo "Installing ${package} at ${JUJU_REMOTE_UNIT:-unset}"
+    echo "Installing ${package}"
     apt-get update >/dev/null
     installPackage ${package}
   fi
@@ -234,24 +234,19 @@ function stopUpstartJob {
   fi
 }
 
-function createRelationConfigDirectory {
-  local path="/usr/local/charm-relations/${JUJU_UNIT_NAME}"
-  createDirectory ${path}
-}
 
-function removeRelationConfigDirectory {
-  local path="/usr/local/charm-relations/${JUJU_UNIT_NAME}"
-  rm -rf ${path} || exitcode=$?
-}
-
-function readRelationConfigs {
-  local path="/usr/local/charm-relations/${JUJU_UNIT_NAME}"
-  for f in ${path}
-  do
-    if ! [ -d ${f} ]
-    then
-      # take action on each file. $f store current file path
-      . ${f}
-    fi
-  done
+function idempotentInstall {
+  local package="${1}"
+  local test=0
+  if [[ -z "${package// }" ]];
+  then
+    echo "Could not install. No package name given";
+    exit 1;
+  fi
+  isPackageInstalled ${package} || test=$?
+  if [ "0" -ne  "${test}" ]; then
+    echo "Installing ${package}"
+    apt-get update >/dev/null
+    installPackage ${package}
+  fi
 }

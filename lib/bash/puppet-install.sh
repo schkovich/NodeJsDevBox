@@ -33,29 +33,66 @@ function purgePuppetDeb {
 }
 
 function installPuppet {
+  local pin="${1-:3.7.3}"
   local package="puppet"
-  purgePackage ${package}
-  purgePuppetDeb
-  installPuppetDeb
-  apt-get update >/dev/null
-  installPackage ${package}
+  dpkg --compare-versions $(puppet --version) ge ${pin}
+  ver=$?
+  if [[ "0" -ne "${ver}" ]]; then
+    purgePackage ${package}
+    purgePuppetDeb
+    installPuppetDeb
+    apt-get update >/dev/null
+    installPackage ${package}
+  else
+    echo "Puppet already at version ${pin}"
+  fi
 }
 
 function installRuby {
-  apt-add-repository ppa:brightbox/ruby-ng
+  apt-add-repository --yes ppa:brightbox/ruby-ng
   apt-get update >/dev/null
   installPackage "ruby2.1"
   installPackage "ruby2.1-dev"
 }
 
-installPackage "build-essential"
-installPackage "git"
+function idempotentInstallRuby {
+  local pin="${1-:2.1.0}"
+  local test=0
+  isPackageInstalled "ruby2.1" || test=$?
+  if [ "0" -ne  "${test}" ]; then
+    installRuby
+  else
+    dpkg --compare-versions $(ruby -e 'puts "#{RUBY_VERSION}"') ge ${pin}
+    ver=$?
+    if [[ "0" -ne "${ver}" ]]; then
+      installRuby
+    else
+      echo "Ruby already at or greater than version ${pin}"
+    fi
+  fi
+}
+
+function installLibrarianPuppet {
+  local test=0
+  gem list "librarian-puppet" -i || test=$?
+
+  if [[ "0" -ne $test ]]; then
+    gem install librarian-puppet
+  else
+    echo "gem librarian-puppet alreary installed"
+  fi
+}
+
+idempotentInstall "build-essential"
+idempotentInstall "git"
 installPuppet
-installRuby
-gem install librarian-puppet
+idempotentInstallRuby
+installLibrarianPuppet
 
 createDirectory "${PUPPET_WDIR}"
+cwd=$(pwd)
 cd "${PUPPET_WDIR}"
 rsync  -avh --no-compress --progress --delete  --exclude .git/ --exclude .idea/ --exclude .vagrant/ /vagrant/ .
 createDirectory "${PUPPET_WDIR}/modules"
-librarian-puppet install --clean --verbose
+librarian-puppet update --verbose
+cd ${cwd}
