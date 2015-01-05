@@ -35,7 +35,7 @@ node default {
   ->
   nodejs::npm { "${puppet_wdir}/../vatrates:mongoskin":
     ensure  => present,
-    version => "~0.9.1",
+    version => "~1.4.4",
   }
   ->
   nodejs::npm { "${puppet_wdir}/../vatrates:body-parser":
