@@ -63,6 +63,11 @@ node default {
     version => "~2.0.0",
   }
   ->
+  nodejs::npm { "${puppet_wdir}/../vatrates:object-to-xml":
+    ensure  => present,
+    version => "~0.0.2",
+  }
+  ->
   file {
     "${puppet_wdir}/../vatrates/data":
       ensure => directory,
