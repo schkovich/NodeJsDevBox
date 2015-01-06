@@ -7,7 +7,7 @@ Vagrant.configure("2") do |config|
   # please see the online documentation at vagrantup.com.
 
   # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = "ubuntu/trusty64"
+  config.vm.box = "aws-nodejs"
   # KVM box name
   # config.vm.box = "trusty64"
 
@@ -75,20 +75,21 @@ Vagrant.configure("2") do |config|
 
     aws.access_key_id = "AKIAJKG272VJ5HVH4WEQ"
     aws.secret_access_key = "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"
-    # aws.keypair_name = ""
-    # aws.ami = "ami-7747d01e"
+    aws.keypair_name = "goran-aws"
+    aws.ami = "ami-2ebd1f59"
     aws.instance_type = 't1.micro'
+    aws.security_groups = ['default']
     override.ssh.username = "ubuntu"
-    override.ssh.private_key_path = ""
+    override.ssh.private_key_path = "~/.ssh/goran-aws.pem"
 
     aws.region = "eu-west-1"
     aws.region_config "" do |region|
       # ubuntu server 14.04 LTS in Ireland
-      region.ami = "ami-2ebd1f59"
-      region.keypair_name = ""
+      # region.ami = "ami-2ebd1f59"
+      # region.keypair_name = "goran-aws"
 
       # region.subnet_id = ''
-      region.security_groups = ['default']
+      # region.security_groups = ['default']
     end
 
     aws.tags = {
