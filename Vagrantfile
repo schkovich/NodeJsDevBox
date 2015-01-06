@@ -73,28 +73,30 @@ Vagrant.configure("2") do |config|
   # aws provider
   config.vm.provider :aws do |aws, override|
 
-    aws.access_key_id = ""
-    aws.secret_access_key = ""
+    aws.access_key_id = "AKIAJKG272VJ5HVH4WEQ"
+    aws.secret_access_key = "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"
     # aws.keypair_name = ""
-    override.ssh.username = "ubuntu"
-    override.ssh.private_key_path = ""
     # aws.ami = "ami-7747d01e"
     aws.instance_type = 't1.micro'
+    override.ssh.username = "ubuntu"
+    override.ssh.private_key_path = ""
 
+    aws.region = "eu-west-1"
     aws.region_config "" do |region|
-      region.ami = ""
+      # ubuntu server 14.04 LTS in Ireland
+      region.ami = "ami-2ebd1f59"
       region.keypair_name = ""
 
       # region.subnet_id = ''
-      region.security_groups = ['']
+      region.security_groups = ['default']
     end
 
     aws.tags = {
       'vpc' => "#{ENV['PUPPET_ENV']}",
-      'name' => "#{ENV['PUPPET_NODE']}",
-      'version' => '',
-      'OS' => 'Ubuntu 13.04',
-      'nodejs' => '0.11.9'
+      'name' => "#{ENV['PUPPET_NODE']}.#{ENV['PUPPET_DOMAIN']}",
+      'version' => '0.0.1',
+      'OS' => 'Ubuntu 14.04',
+      'nodejs' => '0.10.33'
     }
   end
 
