@@ -91,16 +91,16 @@ Vagrant.configure("2") do |config|
     override.ssh.username = config['vm'][provider_name]['provider']['ssh']['username']
     override.ssh.private_key_path = "#{config['ssh']['private_key_path']}"
 
-    if !data['vm']['provider']['aws']['region'].nil?
+    if !config['vm']['provider']['aws']['region'].nil?
       aws.region = "#{config['vm']['provider']['aws']['region']}"
     end
 
-    if !data['vm']['provider']['aws']['security_groups'].nil? && !data['vm']['provider']['aws']['security_groups'].empty?
-      aws.security_groups = data['vm']['provider']['aws']['security_groups']
+    if !config['vm']['provider']['aws']['security_groups'].nil? && !config['vm']['provider']['aws']['security_groups'].empty?
+      aws.security_groups = config['vm']['provider']['aws']['security_groups']
     end
 
     aws.tags = {}
-    data['vm']['provider']['aws']['tags'].each do |key, tag|
+    config['vm']['provider']['aws']['tags'].each do |key, tag|
       aws.tags.store(:key, tag)
     end
 
@@ -136,7 +136,7 @@ Vagrant.configure("2") do |config|
       config['vm'][provider_name]['provider']['provision']['environment'],
       "--modulepath" + module_path + "/modules"
     ]
-    if !data['vm']['provision']['puppet']['options'].empty?
+    if !config['vm']['provision']['puppet']['options'].empty?
       puppet_options.concat = config['vm'][provider_name]['provider']['provision']['puppet']['options']
     end
     puppet.options = puppet_options
