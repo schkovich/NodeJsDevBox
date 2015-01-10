@@ -9,7 +9,7 @@ node default {
   }
 
   class {"nodejs_dev":
-    user => 'ubuntu',
+    user => $puppet_user,
     stage => "preinstall"
   }
 
@@ -21,7 +21,7 @@ node default {
   exec {"express vatrates":
     creates => "${puppet_wdir}/../vatrates",
     cwd     => "${puppet_wdir}/../",
-    user    => "ubuntu"
+    user    => $puppet_user
   }
   ->
   nodejs::npm { "${puppet_wdir}/../vatrates:mongodb":
@@ -72,8 +72,8 @@ node default {
   file {
     "${puppet_wdir}/../vatrates/data":
       ensure => directory,
-      group  => 'ubuntu',
-      owner  => 'ubuntu',
+      group  => $puppet_user,
+      owner  => $puppet_user,
       mode   => 0755,
   }
 
