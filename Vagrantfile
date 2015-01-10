@@ -9,7 +9,9 @@ if "#{ENV['VAGRANT_DEFAULT_PROVIDER']}".empty?
 else
   provider_name = "#{ENV['VAGRANT_DEFAULT_PROVIDER']}"
 end
-
+provider = config['vm']['providers'][provider_name]
+shell = config['vm']['provision']['shell']
+puppet = config['vm']['provision']['puppet']
 Vagrant.require_version '>= 1.7.0'
 
 Vagrant.configure("2") do |config|
@@ -18,7 +20,7 @@ Vagrant.configure("2") do |config|
   # please see the online documentation at vagrantup.com.
 
   # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = config['vm']['provider'][provider_name]['box'].to_s
+  config.vm.box = "#{provider['box']}"
 
   # The url from where the 'config.vm.box' box will be fetched if it
   # doesn't already exist on the user's system.
@@ -54,93 +56,38 @@ Vagrant.configure("2") do |config|
   # will add to /etc/hosts 127.0.1.1 dev.node.js dev case when $PUPPET_HOST is dev
   # for details see http://linux.die.net/man/1/hostname
   # https://docs.puppetlabs.com/facter/1.6/core_facts.html#domain
-  config.vm.hostname = config['vm']['provider'][provider_name]['host'] + "."
-    config['vm']['provider'][provider_name]['domain']
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  config.vm.provider :virtualbox do |vb|
-    # Don't boot with headless mode
-    # vb.gui = true
-
-    # Use VBoxManage to customize the VM. For example to change memory:
-    vb.customize ["modifyvm", :id, "--memory", config['vm']['provider'][provider_name]['memory_size']]
-    # https://www.virtualbox.org/manual/ch09.html#nat-adv-dns
-    # http://www.tcpipguide.com/free/t_DHCPLeaseReallocationProcess.htm
-    # Expired DHCP lease can cause no Internet connectivity from guest
-    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
-    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
-  end
+  # config.vm.hostname = "#{provider['host']}.#{provider['domain']}"
 
   # kvm provider
-  config.vm.provider "kvm" do |v|
-    v.memory_size = config['vm']['provider'][provider_name]['memory_size']
-    v.core_number = config['vm']['provider'][provider_name]['core_number']
+  config.vm.provider :kvm do |vm|
+    vm.memory_size = "#{provider['memory_size']}"
+    vm.core_number = "#{provider['core_number']}"
   end
-
-  # aws provider
-  config.vm.provider :aws do |aws, override|
-
-    aws.access_key_id = "#{config['vm']['provider']['aws']['access_key_id']}"
-    aws.secret_access_key = "#{config['vm']['provider']['aws']['secret_access_key']}"
-    aws.keypair_name = "#{config['vm']['provider']['aws']['keypair_name']}""
-    aws.ami = "#{config['vm']['provider']['aws']['ami']}"
-    aws.instance_type = config['vm']['provider']['aws']['instance_type']
-    aws.security_groups = ['default']
-    override.ssh.username = config['vm']['provider'][provider_name]['ssh']['username']
-    override.ssh.private_key_path = "#{config['ssh']['private_key_path']}"
-
-    if !config['vm']['provider']['aws']['region'].nil?
-      aws.region = "#{config['vm']['provider']['aws']['region']}"
-    end
-
-    if !config['vm']['provider']['aws']['security_groups'].nil? && !config['vm']['provider']['aws']['security_groups'].empty?
-      aws.security_groups = config['vm']['provider']['aws']['security_groups']
-    end
-
-    aws.tags = {}
-    config['vm']['provider']['aws']['tags'].each do |key, tag|
-      aws.tags.store(:key, tag)
-    end
-
-    aws.region_config "#{config['vm']['provider'][provider_name]['region']}" do |region|
-      # ubuntu server 14.04 LTS in Ireland
-      # region.ami = "ami-2ebd1f59"
-      # region.keypair_name = ""
-
-      # region.subnet_id = ''
-      # region.security_groups = []
-    end
-  end
-
   # Working directory
-  wdir = config['vm']['provider'][provider_name]['wdir']
+  wdir = "#{provider['wdir']}"
   # Shell provision
   config.vm.provision :shell do |s|
     s.args = wdir
-    s.path = config['vm']['provision']['shell']['script_path'].to_s
+    s.path = "#{shell['script_path']}"
   end
-
   # Enable provisioning with Puppet stand alone.  Puppet manifests
   # are contained in a directory path relative to defined working directory.
-  config.vm.provision :puppet do |puppet|
-    puppet.manifests_path = ["vm", wdir]
-    puppet.manifest_file  = config['vm']['provision']['puppet']['manifest_file'].to_s
-    puppet.facter = {
+  config.vm.provision :puppet do |p|
+    p.manifests_path = ["vm", "#{wdir}#{puppet['manifests_path']}"]
+    p.manifest_file  = "#{puppet['manifest_file']}"
+    p.facter = {
       "puppet_wdir" => wdir,
-      "puppet_home" => config['vm']['provider'][provider_name]['home'],
-      "puppet_user" => config['vm']['provider'][provider_name]['ssh']['username']
+      "puppet_home" => "#{provider['home']}",
+      "puppet_user" => "#{provider['ssh']['username']}"
     }
-    puppet.temp_dir = wdir
+    p.temp_dir = wdir
     puppet_options = [
-      "--environment=" + config['vm']['provider'][provider_name]['environment'].to_s,
-      "--modulepath=" + wdir.to_s + config['vm']['provision']['puppet']['module_path'].to_s
+      "--environment=" + provider['environment'].to_s,
+      "--modulepath=" + wdir.to_s + puppet['module_path'].to_s
     ]
-    if !config['vm']['provision']['puppet']['options'].empty?
-      puppet_options.concat = config['vm']['provision']['puppet']['options']
+    if !puppet['options'].empty?
+      puppet_options.concat(puppet['options'])
     end
-    puppet.options = puppet_options
+    p.options = puppet_options
   end
-
 end
