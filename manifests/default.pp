@@ -9,19 +9,30 @@ node default {
   }
 
   class {"nodejs_dev":
-    user => $puppet_user,
+    user => $::puppet_user,
+    install_dir => $::puppet_wdir,
+    stage => "preinstall"
+  }
+  ->
+  class {'nodejs_dev::install::mongodb':
+    port => 27017,
+    dbname => $::monogo_dbname,
+    dbuser => $::monogo_dbuser,
+    password => $::monogo_password,
+    dbadmin => $::mongo_dbadmin,
+    admin_password => $::mongo_admin_password,
     stage => "preinstall"
   }
 
-  exec {"express vatrates":
-    creates => "${puppet_wdir}/../vatrates",
-    cwd     => "${puppet_wdir}/../",
-    user    => $puppet_user
+  package { 'strongloop':
+    ensure   => '>= 2.10.0',
+    provider => 'npm',
   }
-  ->
-  nodejs::npm { "${puppet_wdir}/../vatrates:strongloop":
-    ensure  => present,
-    version => "~2.10.0",
+
+  package { 'loopback-connector-mongodb':
+    ensure   => '>= 1.5.0',
+    provider => 'npm',
+    require => Package['strongloop'],
   }
 
 }

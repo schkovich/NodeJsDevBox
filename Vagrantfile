@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 require 'yaml'
 dir = File.dirname(File.expand_path(__FILE__))
-data = YAML.load_file("#{dir}/../wpvatrates.yaml")
+data = YAML.load_file("#{dir}/wpvatrates.yaml")
 config = data['vagrantfile-config']
 if "#{ENV['VAGRANT_DEFAULT_PROVIDER']}".empty?
   provider_name = 'virtualbox'
@@ -78,7 +78,12 @@ Vagrant.configure("2") do |config|
     p.facter = {
       "puppet_wdir" => wdir,
       "puppet_home" => "#{provider['home']}",
-      "puppet_user" => "#{provider['ssh']['username']}"
+      "puppet_user" => "#{provider['ssh']['username']}",
+      "monogo_dbname" => "#{puppet['facts']['mongodb']['dbname']}",
+      "monogo_dbuser" => "#{puppet['facts']['mongodb']['dbuser']}",
+      "monogo_password" => "#{puppet['facts']['mongodb']['password']}",
+      "mongo_dbadmin" => "#{puppet['facts']['mongodb']['dbadmin']}",
+      "mongo_admin_password" => "#{puppet['facts']['mongodb']['admin_password']}"
     }
     p.temp_dir = wdir
     puppet_options = [

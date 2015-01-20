@@ -2,7 +2,7 @@ forge "https://forgeapi.puppetlabs.com"
 
 mod 'schkovich-nodejs_dev',
   :git => 'https://github.com/schkovich/nodejs-dev.git',
-  :ref => '0.1.8'
+  :ref => '0.2.3'
 
 # mod 'schkovich-redis',
 #  :git => 'https://github.com/schkovich/evenup-redis.git'
