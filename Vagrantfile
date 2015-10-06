@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 require 'yaml'
 dir = File.dirname(File.expand_path(__FILE__))
-data = YAML.load_file("#{dir}/wpvatrates.yaml")
+data = YAML.load_file("#{dir}/strongloop.yaml")
 config = data['vagrantfile-config']
 if "#{ENV['VAGRANT_DEFAULT_PROVIDER']}".empty?
   provider_name = 'virtualbox'
