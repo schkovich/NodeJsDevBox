@@ -57,18 +57,6 @@ function purgePackage {
   fi
 }
 
-function installWget {
-  # Install wget if we have to (some older Ubuntu versions)
-  local package='wget'
-  local test=0
-  isPackageInstalled ${package} || test=$?
-  if [ "0" -ne  "${test}" ]; then
-    echo "Installing ${package}"
-    apt-get update >/dev/null
-    installPackage ${package}
-  fi
-}
-
 # Downloads file in given remote path into given local path
 # Expects three arguments: remotepath, localpath, filename
 # downloadFile downloadFile https://foohub.com/user/module/archive \
@@ -81,6 +69,22 @@ function downloadFile {
   if [ ! -f "${localpath}/${filename}" ]; then
     wget "${remotepath}/${filename}" --output-document="${localpath}/${filename}"
   fi
+}
+
+function puppetApply {
+#  local DIR="${BASH_SOURCE%/*}"
+#  if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+
+  local manifestpath="${1:-}"
+  local options="${2:-'--debug --verbose'}"
+
+  if [[ -z "${manifestpath// }" ]];
+  then
+    echo "Could not run puppet apply. Empty manifest path given";
+    exit 1;
+  fi
+
+  puppet apply ${options} "${manifestpath}"
 }
 
 # Installs Puppet module
@@ -119,41 +123,6 @@ function uninstallPuppetModule {
     echo "Failed to uninstall module ${module} with exit code ${exitcode}. Module was not installed most likely"
   fi
 
-}
-
-# Tests if puppet agent is connecting to the puppet master server
-function testPuppetAgent {
-  local exitcode=0
-  local external_puppetmaster=$(config-get external-puppetmaster)
-  puppet agent --test || exitcode=$?
-  if [ "0" -eq "${exitcode}" ]; then
-    echo "Successfully tested puppet agent connecting to ${external_puppetmaster}";
-  else
-    echo "Puppet agent failed to connect to ${external_puppetmaster}";
-    exit ${exitcode}
-  fi
-}
-
-function puppetApply {
-  local DIR="${BASH_SOURCE%/*}"
-  if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
-  local manifestpath=$(config-get "manifest-path")
-
-  puppet apply --debug --verbose "${DIR}/../../${manifestpath:-}"
-}
-
-# Tests if puppet apply runs as expected
-function testPuppetApply {
-  local DIR="${BASH_SOURCE%/*}"
-  if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
-  local exitcode=0
-  puppet apply --test "${DIR}/../lib/puppet/test.pp" || exitcode=$?
-  if [ "0" -eq "${exitcode}" ]; then
-    echo "Successfully tested puppet apply";
-  else
-    echo "Failed to run puppet apply";
-    exit ${exitcode}
-  fi
 }
 
 # Creates a directory in the given path
@@ -246,7 +215,141 @@ function idempotentInstall {
   isPackageInstalled ${package} || test=$?
   if [ "0" -ne  "${test}" ]; then
     echo "Installing ${package}"
-    apt-get update >/dev/null
+    apt-get update --quiet
     installPackage ${package}
+  fi
+}
+
+# Downloads and install Debian package provided by PuppetLabs
+function installPuppetDeb {
+  idempotentInstall 'wget'
+  local DISTRIB_CODENAME=$(lsb_release --codename --short)
+  local REPO_DEB_URL=$(printf "${1}" ${DISTRIB_CODENAME})
+  local REPO_DEB_PATH=$(mktemp)
+  wget -q --output-document="${REPO_DEB_PATH}" "${REPO_DEB_URL}"
+  dpkg -i "${REPO_DEB_PATH}" >/dev/null
+  rm "${REPO_DEB_PATH}"
+}
+
+function purgePuppetDeb {
+  local DEB_PROVIDES="/etc/apt/sources.list.d/puppetlabs.list"
+  if [ -e ${DEB_PROVIDES} ]; then
+    dpkg --purge 'puppetlabs-release'
+  fi
+}
+
+function idempotentInstallPuppet {
+  local pin="${1:-3.7.3}"
+  local puppet_repo="${2}"
+  local package="puppet"
+  local test=0
+
+  dpkg --compare-versions $(puppet --version) ge ${pin} || test=$?
+  if [[ "0" -ne "${test}" ]]; then
+    purgePackage ${package}
+    purgePuppetDeb
+    installPuppetDeb "${puppet_repo}"
+    apt-get update --quiet
+    installPackage ${package}
+  else
+    echo "Puppet already at version ${pin}"
+  fi
+}
+
+function removeAlternatives {
+  local version="${1:-}"
+  update-alternatives --remove ruby /usr/bin/ruby${version}
+  update-alternatives --remove irb /usr/bin/irb${version}
+  update-alternatives --remove gem /usr/bin/gem${version}
+  update-alternatives --remove rake /usr/bin/rake${version}
+  update-alternatives --remove rdoc /usr/bin/rdoc${version}
+  update-alternatives --remove testrb /usr/bin/testrb${version}
+  update-alternatives --remove erb /usr/bin/erb${version}
+  update-alternatives --remove ri /usr/bin/ri${version}
+}
+
+function rubyAlternatives {
+  local pin="${1:-2.1.0}"
+  version="${pin%.*}"
+  removeAlternatives
+  removeAlternatives "1.9.1"
+  removeAlternatives ${version}
+  update-alternatives \
+    --install /usr/bin/ruby ruby /usr/bin/ruby${version} 50 \
+    --slave /usr/bin/irb irb /usr/bin/irb${version} \
+    --slave /usr/bin/gem gem /usr/bin/gem${version} \
+    --slave /usr/bin/rake rake /usr/bin/rake${version} \
+    --slave /usr/bin/rdoc rdoc /usr/bin/rdoc${version} \
+    --slave /usr/bin/testrb testrb /usr/bin/testrb${version} \
+    --slave /usr/bin/erb erb /usr/bin/erb${version} \
+    --slave /usr/bin/ri ri /usr/bin/ri${version}
+}
+
+# Installs given Ruby version
+function installRuby {
+  local version="${1:-2.1.0}"
+  apt-add-repository --yes ppa:brightbox/ruby-ng
+  apt-get update --quiet
+  # http://stackoverflow.com/a/4170409
+  installPackage "ruby${version%.*}"
+  installPackage "ruby${version%.*}-dev"
+}
+
+# Installs required Ruby version case it is not already installed
+function idempotentInstallRuby {
+  local pin="${1:-2.1.0}"
+  local test=0
+  isPackageInstalled "ruby${pin%.*}" || test=$?
+  if [ "0" -ne  "${test}" ]; then
+    installRuby ${pin}
+  else
+    dpkg --compare-versions $(ruby -e 'puts "#{RUBY_VERSION}"') ge ${pin} || test=$?
+    if [[ "0" -ne "${test}" ]]; then
+      installRuby ${pin}
+    else
+      echo "Ruby already at or greater than version ${pin}"
+    fi
+  fi
+}
+
+# http://m0dlx.com/blog/Puppet__could_not_find_a_default_provider_for_augeas.html
+# test: echo -e "require 'augeas'\nputs Augeas.open" | ruby -rrubygems
+# https://tickets.puppetlabs.com/browse/PUP-3796
+function nastyAugeasFix {
+  cur_dir=$(pwd)
+  cd /usr/lib/x86_64-linux-gnu/ruby/vendor_ruby/
+  ver_two_one='2.1.0'
+  if ! [ -h "${ver_two_one}" ]
+  then
+      rm -r "${ver_two_one}/";
+      ln -s 2.0.0/ ${ver_two_one}
+  fi;
+  cd ../../
+  if ! [ -h 'libruby-2.0.so.2.0' ]
+  then
+      ln -s libruby-2.1.so.2.1 libruby-2.0.so.2.0
+  fi;
+  cd ${cur_dir}
+}
+
+function idempotentInstallLibrarianPuppet {
+  local test=0
+  gem list "librarian-puppet" -i || test=$?
+
+  if [[ "0" -ne $test ]]; then
+    gem install librarian-puppet --no-rdoc --no-ri
+  else
+    echo "gem librarian-puppet already installed"
+  fi
+}
+
+function idempotentInstallDeepMerge {
+  local test=0
+  gem list "deep_merge" -i || test=$?
+
+  if [[ "0" -ne $test ]]; then
+    gem install deep_merge --no-rdoc --no-ri
+  else
+    echo "gem deep_merge already installed"
   fi
 }

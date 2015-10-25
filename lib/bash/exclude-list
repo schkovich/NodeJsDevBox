@@ -1,0 +1,6 @@
+.git
+.gitignore
+vendors/
+.tmp/
+.librarian
+Puppetfile.lock

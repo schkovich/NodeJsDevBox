@@ -1,8 +1,11 @@
+#!/usr/bin/env ruby
+#^syntax detection
+
 forge "https://forgeapi.puppetlabs.com"
 
 mod 'schkovich-nodejs_dev',
   :git => 'https://github.com/schkovich/nodejs-dev.git',
-  :ref => '0.2.3'
+  :ref => 'master'
 
 # mod 'schkovich-redis',
 #  :git => 'https://github.com/schkovich/evenup-redis.git'
