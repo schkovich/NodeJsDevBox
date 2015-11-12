@@ -107,7 +107,7 @@ Vagrant.configure("2") do |config|
   # Shell provision
   config.vm.provision  "install_puppet", type: "shell", run: "once" do |s|
     args = shell['args']['install_puppet']
-    s.inline = "/bin/bash /srv/lolstats/#{shell['config_puppet']} $1 $2 $3 $4"
+    s.inline = "/bin/bash /srv/lolstats/#{shell['install_puppet']} $1 $2 $3 $4"
     s.args = "#{args['ruby_version']} #{args['puppet_version']} #{args['puppet_repo']} #{shell['helpers']}"
     unless shell['privileged'].nil?
       s.privileged = shell['privileged']

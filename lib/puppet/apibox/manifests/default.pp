@@ -35,4 +35,10 @@ node default {
     require => Package['strongloop'],
   }
 
+  package { 'loopback-connector-rest':
+    ensure   => '>= 1.10.1',
+    provider => 'npm',
+    require => Package['strongloop'],
+  }
+
 }
