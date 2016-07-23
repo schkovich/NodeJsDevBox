@@ -10,7 +10,6 @@ node default {
 
   class {"nodejs_dev":
     user => $::puppet_user,
-    install_dir => $::puppet_wdir,
     stage => "preinstall"
   }
   ->
@@ -25,18 +24,19 @@ node default {
   }
 
   package { 'strongloop':
-    ensure   => '>= 2.10.0',
+    ensure   => '>= 6.0.1',
     provider => 'npm',
+    require => Class['nodejs'],
   }
 
   package { 'loopback-connector-mongodb':
-    ensure   => '>= 1.5.0',
+    ensure   => '>= 1.15.2',
     provider => 'npm',
     require => Package['strongloop'],
   }
 
   package { 'loopback-connector-rest':
-    ensure   => '>= 1.10.1',
+    ensure   => '>= 2.0.0',
     provider => 'npm',
     require => Package['strongloop'],
   }

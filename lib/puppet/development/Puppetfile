@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+#^syntax detection
+
+forge "https://forgeapi.puppetlabs.com"
+
+mod 'schkovich-nodejs_dev',
+  :git => 'https://github.com/schkovich/nodejs-dev.git',
+  :ref => 'master'
+
+mod 'puppet/nodejs'
+mod 'puppetlabs/mongodb'

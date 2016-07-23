@@ -1,0 +1,13 @@
+---
+:backends:
+  - yaml
+:hierarchy:
+  - "%{::environment}/%{::clientcert}"
+  - "%{::environment}/%{calling_module}"
+  - "%{::environment}"
+  - "common/%{calling_module}"
+  - "common"
+:yaml:
+  :datadir: /srv/tom/iac/config
+:logger: console
+:merge_behavior: deeper

@@ -5,21 +5,25 @@ dir = File.dirname(File.expand_path(__FILE__))
 data = YAML.load_file("#{dir}/lolstats.yaml")
 config = data['vagrantfile-config']
 
-case
-  when !config['vm']['chosen_provider'].nil?
-    provider_name = config['vm']['chosen_provider']
-  when !"#{ENV['VAGRANT_DEFAULT_PROVIDER']}".empty?
-    provider_name = "#{ENV['VAGRANT_DEFAULT_PROVIDER']}"
-  else
-    provider_name = 'virtualbox'
+if config['vm']['chosen_provider'].to_s == ''
+  provider_name = ENV['VAGRANT_DEFAULT_PROVIDER'] || 'virtualbox'
+else
+  provider_name = config['vm']['chosen_provider']
 end
+
+ENV['VAGRANT_DEFAULT_PROVIDER'] = provider_name
+
 provider = config['vm']['providers'][provider_name]
 shell = config['vm']['provision']['shell']
 puppet = config['vm']['provision']['puppet']
 network = config['vm']['providers'][provider_name]['network']
-synced_folder = config['vm']['synced_folder'];
+sync_paths = config['vm']['sync_paths'];
 ssh = config['ssh']
 Vagrant.require_version config['vagrant']['require_version']
+
+# IaC directory
+iac_path = "#{config['iac_path']}"
+env_path = "#{config['env_path']}/environments/#{provider['environment']}"
 
 Vagrant.configure("2") do |config|
   # All Vagrant configuration is done here. The most common configuration
@@ -35,26 +39,17 @@ Vagrant.configure("2") do |config|
     config.vm.box_url = "#{provider['box_url']}"
   end
 
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # NFS shares (Ubuntu) are not working well on encrypted file systems
-  # https://help.ubuntu.com/community/SettingUpNFSHowTo#Mounting_NFS_shares_in_encrypted_home_won.27t_work_on_boot
-  # config.vm.synced_folder "~/Projects/HatchJs/", "/project", :nfs => true
-
-  # View the documentation for the provider you're using for more
-  # information on available options.
-
   # setup FQDN
   # will add to /etc/hosts 127.0.1.1 dev.node.js dev case when $PUPPET_HOST is dev
   # for details see http://linux.die.net/man/1/hostname
   # https://docs.puppetlabs.com/facter/1.6/core_facts.html#domain
   # config.vm.hostname = "#{provider['host']}.#{provider['domain']}"
-  if provider['host'].to_s.strip.length != 0 && provider['domain'].to_s.strip.length != 0
-    hostname = "#{provider['host']}.#{provider['domain']}"
+  if provider['host'].to_s.strip.length > 0 && provider['domain'].to_s.strip.length > 0
+    config.vm.hostname = "#{provider['host']}.#{provider['domain']}"
   end
 
+  # View the documentation for the provider you're using for more
+  # information on available options.
   if provider_name == 'virtualbox'
     config.vm.provider :virtualbox do |vb|
       provider['modifyvm'].each do |key, value|
@@ -62,16 +57,14 @@ Vagrant.configure("2") do |config|
       end
     end
   end
-  # kvm provider
-  if provider_name == 'kvm'
-      config.vm.provider :kvm do |vm|
-        vm.memory_size = "#{provider['memory_size']}"
-        vm.core_number = "#{provider['core_number']}"
-      end
-  end
 
-  unless hostname.nil? && hostname.to_s.strip.length == 0
-    config.vm.hostname = hostname
+  # libvirt provider
+  if provider_name == 'libvirt'
+    config.vm.provider :libvirt do |domain|
+      provider['modifyvm'].each do |key, value|
+        domain.send("#{key}=", value)
+      end
+    end
   end
 
   # Create a forwarded port mapping which allows access to a specific port
@@ -94,21 +87,28 @@ Vagrant.configure("2") do |config|
     config.vm.network "private_network", ip: network['private_network']['ip']
   end
 
-  synced_folder.each do |key, folder|
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  # NFS shares (Ubuntu) are not working well on encrypted file systems
+  # https://help.ubuntu.com/community/SettingUpNFSHowTo#Mounting_NFS_shares_in_encrypted_home_won.27t_work_on_boot
+  sync_paths.each do |key, folder|
     unless folder['source'].empty? || folder['target'].empty?
       sync_owner = !folder['sync_owner'].nil? ? folder['sync_owner'] : 'vagrant'
       sync_group = !folder['sync_group'].nil? ? folder['sync_group'] : 'vagrant'
-      config.vm.synced_folder "#{folder['source']}", "#{folder['target']}",
-      group: "#{sync_group}", owner: "#{sync_owner}", mount_options: folder['mount_options']
+      config.vm.synced_folder "#{folder['source']}", "#{iac_path}/#{folder['target']}",
+      group: "#{sync_group}", owner: "#{sync_owner}", mount_options: folder['mount_options'],
+      type: "#{provider['sync_type']}", rsync__args: ["--verbose", "--archive", "--delete", "-z", "--links"]
     end
   end
-  # Working directory
-  wdir = "#{provider['wdir']}"
+
   # Shell provision
+  args_install = shell['args']['install_puppet']
   config.vm.provision  "install_puppet", type: "shell", run: "once" do |s|
-    args = shell['args']['install_puppet']
-    s.inline = "/bin/bash /srv/lolstats/#{shell['install_puppet']} $1 $2 $3 $4"
-    s.args = "#{args['ruby_version']} #{args['puppet_version']} #{args['puppet_repo']} #{shell['helpers']}"
+    s.path = "#{shell['install_puppet']}"
+    s.upload_path = "#{iac_path}/#{shell['install_puppet']}"
+    s.args = "#{iac_path}/#{shell['helpers']} #{args_install['ruby_version']} #{args_install['puppet_version']} #{args_install['puppet_repo']}"
     unless shell['privileged'].nil?
       s.privileged = shell['privileged']
     end
@@ -116,8 +116,8 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision "config_puppet", type: "shell", run: "always" do |i|
     args = shell['args']['config_puppet']
-    i.inline = "/bin/bash /srv/lolstats/#{shell['config_puppet']} $1 $2 $3 $4 $5"
-    i.args = "#{wdir} #{args['sync_dir']} #{shell['helpers']} #{args['exclude_path']} #{provider_name}"
+    i.args = "#{env_path}"
+    i.path = "#{shell['config_puppet']}"
     unless shell['privileged'].nil?
       i.privileged = shell['privileged']
     end
@@ -126,10 +126,12 @@ Vagrant.configure("2") do |config|
   # Enable provisioning with Puppet stand alone.  Puppet manifests
   # are contained in a directory path relative to defined working directory.
   config.vm.provision :puppet do |p|
-    p.manifests_path = ["vm", "#{wdir}#{puppet['manifests_path']}"]
-    p.manifest_file  = "#{puppet['manifest_file']}"
+    p.environment_path = "lib/puppet"
+    p.temp_dir = '/etc/puppetlabs/code'
+    p.environment = provider['environment'].to_s
+    p.synced_folder_args = ["--verbose", "--archive", "--delete", "-z", "--links",
+        "--exclude=development/vendors", "--exclude=*production", "--exclude=*.lock"]
     p.facter = {
-      "puppet_wdir" => wdir,
       "puppet_home" => "#{provider['home']}",
       "puppet_user" => "#{provider['ssh']['username']}",
       "monogo_dbname" => "#{puppet['facts']['mongodb']['dbname']}",
@@ -138,14 +140,8 @@ Vagrant.configure("2") do |config|
       "mongo_dbadmin" => "#{puppet['facts']['mongodb']['dbadmin']}",
       "mongo_admin_password" => "#{puppet['facts']['mongodb']['admin_password']}"
     }
-    p.temp_dir = wdir
-    puppet_options = [
-      "--environment=" + provider['environment'].to_s,
-      "--modulepath=" + wdir.to_s + puppet['module_path'].join(":" + wdir.to_s)
-    ]
-    if !puppet['options'].empty?
-      puppet_options.concat(puppet['options'])
-    end
-    p.options = puppet_options
+    p.hiera_config_path = "lib/puppet/hiera.yaml"
+    p.working_directory = "/etc/puppetlabs/code/environments"
+    p.options = puppet['options']
   end
 end
