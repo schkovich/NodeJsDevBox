@@ -1,0 +1,20 @@
+# Autodetect text files
+* text=lf
+
+# ...Unless the name matches the following
+# overriding patterns
+
+# Definitively text files
+*.txt text
+*.c text
+*.h text
+*.sh text
+*.pp text
+*.erb text
+*.rb text
+*.yaml text
+*.conf text
+
+# Ensure those won't be messed up with
+*.jpg binary
+*.data binary
