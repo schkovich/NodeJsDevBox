@@ -13,13 +13,7 @@ node default {
     stage => "preinstall"
   }
   ->
-  class {'nodejs_dev::install::mongodb':
-    port => 27017,
-    dbname => $::monogo_dbname,
-    dbuser => $::monogo_dbuser,
-    password => $::monogo_password,
-    dbadmin => $::mongo_dbadmin,
-    admin_password => $::mongo_admin_password,
+  class {'mongodb32xenial':
     stage => "preinstall"
   }
 
